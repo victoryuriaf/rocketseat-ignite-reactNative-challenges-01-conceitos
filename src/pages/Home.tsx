@@ -1,55 +1,95 @@
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
 import { Header } from '../components/Header';
 import { Task, TasksList } from '../components/TasksList';
 import { TodoInput } from '../components/TodoInput';
 
+export type EditTaskArgs = {
+  taskId: number;
+  taskNewTitle: string;
+}
+
 export function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
 
   function handleAddTask(newTaskTitle: string) {
-    const newTask = {
-      id: new Date().getTime(),
-      title: newTaskTitle,
-      done: false,
+    const taskAlreadyExists = tasks.find(task => task.title === newTaskTitle);
+    
+    if (taskAlreadyExists) {
+      return Alert.alert(
+        'Task already registered!',
+        'You cannot register a task with the same name.'
+      );
     }
 
-    setTasks(oldTasks => [...oldTasks, newTask]);
+    const data = {
+      id: new Date().getTime(),
+      title: newTaskTitle,
+      done: false
+    }
+
+    setTasks(oldState => [...oldState, data])
   }
 
   function handleToggleTaskDone(id: number) {
-    const newTasks = tasks.map((task) => {
-      if (task.id === id) {
-        task = {
-          ...task,
-          done: !task.done,
-        };
-      }
-      return task;
-    });
-    setTasks(newTasks);
+    const updatedTasks = tasks.map(task => ({ ...task }));
+    const foundItem = updatedTasks.find(task => task.id === id);
+
+    if (!foundItem)
+    return;
+
+    foundItem.done = !foundItem.done;
+
+    setTasks(updatedTasks);
   }
 
   function handleRemoveTask(id: number) {
-    const updatedTaks = tasks.filter(task => task.id !== id);
+    Alert.alert(
+      "Remove item!",
+      "Are you sure you want to remove this item?",
+      [
+        {
+          text: "No",
+          style: 'cancel'
+        },
+        { 
+          text: "Yes",
+          onPress: () => 
+          setTasks(oldState => oldState.filter(task => task.id !== id)),
+          style: 'destructive'
+        }
+      ]
+    );
+  }
 
-    setTasks(updatedTaks);
+  function handleEditTask({ taskId, taskNewTitle }: EditTaskArgs) {
+    const updatedTasks = tasks.map(task => ({ ...task }));
+    const foundItem = updatedTasks.find(task => task.id === taskId);
+
+    if (!foundItem)
+    return;
+
+    foundItem.title = taskNewTitle;
+
+    setTasks(updatedTasks);
   }
 
   return (
-    <View style={styles.container}>
-      <Header tasksCounter={tasks.length} />
+    <View style={ styles.container }>
+      <Header tasksCounter={ tasks.length } />
 
-      <TodoInput addTask={handleAddTask} />
+      <TodoInput addTask={ handleAddTask } />
 
-      <TasksList
-        tasks={tasks}
-        toggleTaskDone={handleToggleTaskDone}
-        removeTask={handleRemoveTask}
+      <TasksList 
+        tasks={ tasks } 
+        toggleTaskDone={ handleToggleTaskDone }
+        removeTask={ handleRemoveTask } 
+        editTask={ handleEditTask }
       />
+
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -57,4 +97,4 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#EBEBEB'
   }
-})
+});
